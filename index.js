@@ -40,8 +40,8 @@ app.post("/addSerial", async (req, res) => {
       const serials = await Serial.find({});
       res.status(201).send({ msg: "success", serials: serials });
     }
-  } catch (err) {
-    res.status(500).send(`Error: ${err.message}`);
+  } catch (error) {
+    res.status(500).send(`Error: ${error.message}`);
   }
 });
 
