@@ -16,9 +16,7 @@ const Offer = require("./models/offer");
 const Admin = require("./models/admin");
 
 mongoose
-  .connect(
-    `mongodb+srv://yhia:ReNjCjfBKtfDX4eX@nodejscluster.wqfva.mongodb.net/?retryWrites=true&w=majority&appName=nodeJsCluster`
-  )
+  .connect(`${process.env.MONGO_URI}`)
   .then(() => {
     console.log("db connected succefully");
   })
