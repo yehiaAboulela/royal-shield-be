@@ -1,9 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const multer = require("multer");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
 require("dotenv").config();
 // const { sendFile } = require("express/lib/response");
 
@@ -11,7 +9,6 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
-const upload = multer({ dest: "uploads/" });
 
 const Warranty = require("./models/warranty");
 const Serial = require("./models/serial");
@@ -90,7 +87,7 @@ app.post("/checkSerial", async (req, res) => {
       const { name, phoneNumber } = await Warranty.findOne({
         serialNumber: curSerial,
       });
-      const hiddenName = name.slice(-3);
+      const hiddenName = name.slice(0, 3);
       const hiddenPhone = phoneNumber.slice(-3);
       return res.send({
         status: "act",
