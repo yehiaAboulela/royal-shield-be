@@ -1,21 +1,20 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
 
-const adminSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
 });
 
-// Hash the password before saving the admin
-adminSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  this.password = await bcrypt.hash(this.password, 10);
+// Skip password hashing
+userSchema.pre("save", function (next) {
+  // Any additional logic can be added here if needed
   next();
 });
 
-adminSchema.methods.comparePassword = function (password) {
-  return bcrypt.compare(password, this.password);
+userSchema.methods.comparePassword = function (password) {
+  // Just a simple comparison (note: this is not secure)
+  return password === this.password;
 };
 
-const Admin = mongoose.model("Admin", adminSchema);
-module.exports = Admin;
+const User = mongoose.model("User", userSchema);
+module.exports = User;
