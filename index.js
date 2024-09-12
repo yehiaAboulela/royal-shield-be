@@ -2,6 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const bodyParser = require("body-parser");
+const nodemailer = require("nodemailer");
 require("dotenv").config();
 // const { sendFile } = require("express/lib/response");
 
@@ -9,6 +11,8 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 const Warranty = require("./models/warranty");
 const Serial = require("./models/serial");
@@ -379,6 +383,42 @@ function authenticateToken(req, res, next) {
 // Protected Admin Route
 app.get("/admin/serials", authenticateToken, (req, res) => {
   res.json({ message: "Welcome to the admin dashboard!" });
+});
+
+app.post("/send-email", (req, res) => {
+  const { name, email, msg, phone } = req.body;
+
+  if (!name || !email || !msg) {
+    return res.status(400).send("All fields are required.");
+  }
+
+  // Create a transporter to send the email
+  let transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.GMAIL_USER, // Your Gmail account
+      pass: process.env.GMAIL_PASS, // Your Gmail app password
+    },
+  });
+
+  // Setup email data
+  let mailOptions = {
+    from: email, // Sender's email address
+    to: process.env.GMAIL_USER, // Your Gmail address
+    subject: `New message from ${name}`,
+    text: `Message: ${msg}\nFrom: ${name} (${email})\nPhone Number: ${phone}`,
+  };
+
+  // Send the email
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log(error);
+      return res.status(500).send("Error sending email.");
+    } else {
+      console.log("Email sent: " + info.response);
+      return res.status(200).json("Message sent successfully!");
+    }
+  });
 });
 
 const port = process.env.PORT || 3000;
