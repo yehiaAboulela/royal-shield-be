@@ -4,6 +4,10 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const bodyParser = require("body-parser");
 const nodemailer = require("nodemailer");
+const path = require("path");
+const pdfMake = require("pdfmake/build/pdfmake");
+const pdfFonts = require("pdfmake/build/vfs_fonts");
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
 require("dotenv").config();
 // const { sendFile } = require("express/lib/response");
 
@@ -27,6 +31,77 @@ mongoose
   .catch(() => {
     console.log("err connecting DB");
   });
+
+// Function to convert image to Base64
+const getImageBase64 = (imagePath) => {
+  return new Promise((resolve, reject) => {
+    fs.readFile(imagePath, (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        const base64Image = `data:image/png;base64,${data.toString("base64")}`;
+        resolve(base64Image);
+      }
+    });
+  });
+};
+const createPdfWithImage = async (data, imageBase64) => {
+  const docDefinition = {
+    background: [
+      {
+        image: imageBase64,
+        width: 600,
+        opacity: 0.2,
+        alignment: "center",
+      },
+    ],
+    content: [
+      { text: "User Details", style: "header" },
+      {
+        table: {
+          body: [
+            [
+              "Name",
+              "Phone Number",
+              "Birthdate",
+              "Address",
+              "Brand",
+              "Model",
+              "Color",
+              "Email",
+              "Serial Number",
+              "Created At",
+            ],
+            [
+              data.name,
+              data.phoneNumber,
+              data.birthdate,
+              data.address,
+              data.brand,
+              data.model,
+              data.color,
+              data.email,
+              data.serialNumber,
+              data.createdAt,
+            ],
+          ],
+        },
+      },
+    ],
+    styles: {
+      header: {
+        fontSize: 18,
+        bold: true,
+        alignment: "center",
+      },
+    },
+  };
+  return new Promise((resolve, reject) => {
+    pdfMake.createPdf(docDefinition).getBuffer((buffer) => {
+      resolve(buffer);
+    });
+  });
+};
 /* admin add or delete serials */
 app.get("/", (req, res) => res.send("Hello World!"));
 app.post("/addSerial", async (req, res) => {
@@ -85,8 +160,9 @@ app.get("/viewSerials", async (req, res) => {
 app.post("/checkSerial", async (req, res) => {
   try {
     const { serialNumber } = req.body;
+    console.log(serialNumber);
     const serialNum = await Serial.findOne({ serialNumber });
-    // console.log(serialNum);
+
     if (serialNum.activated) {
       const curSerial = serialNum.serialNumber;
       const { name, phoneNumber } = await Warranty.findOne({
@@ -136,6 +212,7 @@ app.post("/activation", async (req, res) => {
     serialNumber,
     createdAt,
   } = req.body;
+
   try {
     const foundSerial = await Serial.findOne({ serialNumber });
     console.log("Found Serial:", foundSerial);
@@ -173,9 +250,19 @@ app.post("/activation", async (req, res) => {
     });
     await newActivation.save();
 
+    // Read the image and generate the PDF
+    const imagePath = path.join(__dirname, "/logo-transparent.png"); // Adjust path if necessary
+    const imageBase64 = await getImageBase64(imagePath);
+    const pdfBuffer = await createPdfWithImage(newActivation, imageBase64);
+
+    // Send PDF as response
     res.status(201).send({
       msg: "success",
       activation: newActivation,
+      pdf: {
+        content: pdfBuffer.toString("base64"), // Send PDF as Base64 string
+        filename: "user-details.pdf",
+      },
     });
   } catch (err) {
     res.status(500).send(`Error: ${err.message}`);

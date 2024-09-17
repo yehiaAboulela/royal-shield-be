@@ -18,6 +18,7 @@
     "mongoose": "^8.6.0",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.15",
+    "pdfmake": "^0.2.12",
     "uuid": "^10.0.0"
   }
 }
