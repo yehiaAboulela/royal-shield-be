@@ -7,6 +7,8 @@ const nodemailer = require("nodemailer");
 require("dotenv").config();
 const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
+const path = require("path");
+const fs = require("fs");
 
 const app = express();
 
@@ -125,6 +127,8 @@ app.post("/checkSerial", async (req, res) => {
   }
 });
 
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 /* activate serial */
 app.post("/activation", upload.single("image"), async (req, res) => {
   const {
@@ -203,12 +207,24 @@ app.delete("/activation/:serialNumber", async (req, res) => {
   const { serialNumber } = req.params;
 
   try {
-    // Find and delete the activation by serialNumber
+    // Find the activation by serialNumber
     const deletedActivation = await Warranty.findOneAndDelete({ serialNumber });
 
     if (!deletedActivation) {
       return res.status(404).send({ msg: "Activation not found" });
     }
+
+    // Construct the path to the image file
+    const imagePath = path.join(__dirname, deletedActivation.imagePath);
+
+    // Delete the image file
+    fs.unlink(imagePath, (err) => {
+      if (err) {
+        console.error("Error deleting image:", err);
+        // Optionally, you might still want to respond with success here,
+        // since the main activation deletion was successful.
+      }
+    });
 
     // Retrieve all remaining activations
     const allActivations = await Warranty.find();
