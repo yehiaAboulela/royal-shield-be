@@ -5,7 +5,8 @@ const jwt = require("jsonwebtoken");
 const bodyParser = require("body-parser");
 const nodemailer = require("nodemailer");
 require("dotenv").config();
-// const { sendFile } = require("express/lib/response");
+const multer = require("multer");
+const upload = multer({ dest: "uploads/" });
 
 const app = express();
 
@@ -125,7 +126,7 @@ app.post("/checkSerial", async (req, res) => {
 });
 
 /* activate serial */
-app.post("/activation", async (req, res) => {
+app.post("/activation", upload.single("image"), async (req, res) => {
   const {
     name,
     phoneNumber,
@@ -138,6 +139,7 @@ app.post("/activation", async (req, res) => {
     serialNumber,
     createdAt,
   } = req.body;
+
   try {
     const foundSerial = await Serial.findOne({ serialNumber });
     console.log("Found Serial:", foundSerial);
@@ -148,7 +150,6 @@ app.post("/activation", async (req, res) => {
 
     if (foundSerial.activated) {
       const activatedWarranty = await Warranty.findOne({ serialNumber });
-      console.log(activatedWarranty);
       return res.send({
         msg: "activated",
         owner: {
@@ -172,12 +173,13 @@ app.post("/activation", async (req, res) => {
       email,
       serialNumber,
       createdAt,
+      imagePath: req.file.path, // Save image path to warranty
     });
     await newActivation.save();
-
     res.status(201).send({
       msg: "success",
       activation: newActivation,
+      imageUrl: req.file.path, // Return image path
     });
   } catch (err) {
     res.status(500).send(`Error: ${err.message}`);

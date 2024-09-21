@@ -11,10 +11,12 @@ const warrantySchema = new schema({
   color: String,
   email: String,
   serialNumber: String,
+  imagePath: String,
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
-const Waranty = mongoose.model("Waranty", warrantySchema);
-module.exports = Waranty;
+
+const Warranty = mongoose.model("Warranty", warrantySchema);
+module.exports = Warranty;
