@@ -468,6 +468,30 @@ app.get("/bookForms", async (req, res) => {
   }
 });
 
+app.delete("/bookForm/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await Appointment.findByIdAndDelete(id);
+
+    if (!result) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    const remainingAppointments = await Appointment.find();
+
+    res.status(200).json({
+      message: "Appointment deleted successfully",
+      remainingAppointments: remainingAppointments,
+    });
+  } catch (error) {
+    console.error("Error deleting appointment:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to delete appointment", details: error.message });
+  }
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log("port is 3000");
