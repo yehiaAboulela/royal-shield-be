@@ -21,6 +21,7 @@ const Warranty = require("./models/warranty");
 const Serial = require("./models/serial");
 const Offer = require("./models/offer");
 const Admin = require("./models/admin");
+const Appointment = require("./models/appointment");
 
 mongoose
   .connect(`${process.env.MONGO_URI}`)
@@ -146,7 +147,6 @@ app.post("/activation", upload.single("image"), async (req, res) => {
 
   try {
     const foundSerial = await Serial.findOne({ serialNumber });
-    console.log("Found Serial:", foundSerial);
 
     if (!foundSerial) {
       return res.send({ msg: "not found" });
@@ -207,26 +207,20 @@ app.delete("/activation/:serialNumber", async (req, res) => {
   const { serialNumber } = req.params;
 
   try {
-    // Find the activation by serialNumber
     const deletedActivation = await Warranty.findOneAndDelete({ serialNumber });
 
     if (!deletedActivation) {
       return res.status(404).send({ msg: "Activation not found" });
     }
 
-    // Construct the path to the image file
     const imagePath = path.join(__dirname, deletedActivation.imagePath);
 
-    // Delete the image file
     fs.unlink(imagePath, (err) => {
       if (err) {
         console.error("Error deleting image:", err);
-        // Optionally, you might still want to respond with success here,
-        // since the main activation deletion was successful.
       }
     });
 
-    // Retrieve all remaining activations
     const allActivations = await Warranty.find();
 
     res.status(200).send({
@@ -439,6 +433,39 @@ app.post("/send-email", (req, res) => {
       return res.status(200).json("Message sent successfully!");
     }
   });
+});
+
+// POST Endpoint to store form data //NANO CERAMIC
+app.post("/bookForm", async (req, res) => {
+  const { fullName, phoneNumber, carType, carModel, service, branch, notes } =
+    req.body;
+  try {
+    const newForm = new Appointment({
+      fullName,
+      phoneNumber,
+      carType,
+      carModel,
+      service,
+      branch,
+      notes,
+    });
+    await newForm.save();
+    res.status(201).json({ msg: "success" });
+  } catch (error) {
+    res.status(400).json({ error: "Failed to save form data", details: error });
+  }
+});
+
+// GET Endpoint to retrieve all form data //NANO CERAMIC
+app.get("/bookForms", async (req, res) => {
+  try {
+    const forms = await Appointment.find();
+    res.status(200).json(forms);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "Failed to retrieve form data", details: error });
+  }
 });
 
 const port = process.env.PORT || 3000;
