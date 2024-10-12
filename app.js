@@ -70,20 +70,32 @@ app.post("/deleteSerial", async (req, res) => {
   }
 });
 
+// Protected Admin Route
 app.get("/viewSerials", async (req, res) => {
+  const authHeader = req.headers["authorization"];
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).send("No token provided or invalid format");
+  }
+
+  const token = authHeader.split(" ")[1];
+
   try {
-    // Retrieve all serials from the database
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
+    // Token is valid, proceed to retrieve serials
     const serials = await Serial.find({});
 
-    // Check if any serials exist
     if (serials.length === 0) {
       return res.status(404).send("No serials found");
     }
 
-    // Send the list of serials back as a response
     res.status(200).json({ status: "ok", serials });
   } catch (err) {
-    res.status(500).send(`Error: ${err.message}`);
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).send("Token expired");
+    }
+    return res.status(403).send(`Invalid token: ${err.message}`);
   }
 });
 /* user check serials */
@@ -191,15 +203,27 @@ app.post("/activation", upload.single("image"), async (req, res) => {
 });
 
 app.get("/activatedWarrantys", async (req, res) => {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).send("No token provided or invalid format");
+  }
+
+  const token = authHeader.split(" ")[1];
+
   try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
     const warrantys = await Warranty.find({});
 
     if (warrantys.length === 0) {
       return res.status(404).send("No warrantys found");
     }
     res.status(200).json({ status: "ok", warrantys });
-  } catch {
-    res.status(500).send(`Error: ${err.message}`);
+  } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).send("Token expired");
+    }
+    return res.status(403).send(`Invalid token: ${err.message}`);
   }
 });
 // Delete activation by serial number and send all remaining activations
@@ -318,11 +342,26 @@ app.post("/offerUnCheck", async (req, res) => {
 });
 
 app.get("/getOffers", async (req, res) => {
+  const authHeader = req.headers["authorization"];
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res
+      .status(401)
+      .send({ message: "No token provided or invalid format" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
   try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
     const offers = await Offer.find({});
-    res.send({ status: "ok", offers });
+    res.status(200).json({ status: "ok", offers });
   } catch (error) {
-    res.status(500).send({ message: "An error occurred", error });
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).send({ message: "Token expired" });
+    }
+    return res.status(403).send({ message: "Invalid token", error });
   }
 });
 app.delete("/deleteOffers", async (req, res) => {
@@ -382,21 +421,6 @@ app.post("/admin/login", async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
-});
-function authenticateToken(req, res, next) {
-  const token = req.headers["authorization"];
-  if (!token) return res.sendStatus(401);
-
-  jwt.verify(token, process.env.JWT_SECRET_KEY, (err, admin) => {
-    if (err) return res.sendStatus(403);
-    req.admin = admin;
-    next();
-  });
-}
-
-// Protected Admin Route
-app.get("/admin/serials", authenticateToken, (req, res) => {
-  res.json({ message: "Welcome to the admin dashboard!" });
 });
 
 app.post("/send-email", (req, res) => {
@@ -458,13 +482,22 @@ app.post("/bookForm", async (req, res) => {
 
 // GET Endpoint to retrieve all form data //NANO CERAMIC
 app.get("/bookForms", async (req, res) => {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).send("No token provided or invalid format");
+  }
+
+  const token = authHeader.split(" ")[1];
+
   try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const forms = await Appointment.find();
     res.status(200).json(forms);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Failed to retrieve form data", details: error });
+  } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).send("Token expired");
+    }
+    return res.status(403).send(`Invalid token: ${err.message}`);
   }
 });
 
