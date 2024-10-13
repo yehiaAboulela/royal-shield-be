@@ -280,7 +280,7 @@ app.delete("/activations", async (req, res) => {
 
 /* offers */
 app.post("/sendOffer", async (req, res) => {
-  const { name, email, phone, msg } = req.body;
+  const { name, email, phone, msg, company } = req.body;
   try {
     if (name && email) {
       const newOffer = new Offer({
@@ -288,6 +288,7 @@ app.post("/sendOffer", async (req, res) => {
         email,
         phone,
         msg,
+        company,
       });
       await newOffer.save();
       res.send({
@@ -424,7 +425,7 @@ app.post("/admin/login", async (req, res) => {
 });
 
 app.post("/send-email", (req, res) => {
-  const { name, email, msg, phone } = req.body;
+  const { name, email, msg, phone, company } = req.body;
 
   if (!name || !email || !msg) {
     return res.status(400).send("All fields are required.");
@@ -442,6 +443,7 @@ app.post("/send-email", (req, res) => {
   // Setup email data
   let mailOptions = {
     from: email, // Sender's email address
+    company,
     to: process.env.GMAIL_USER, // Your Gmail address
     subject: `New message from ${name}`,
     text: `Message: ${msg}\nFrom: ${name} (${email})\nPhone Number: ${phone}`,

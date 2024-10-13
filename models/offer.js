@@ -16,6 +16,7 @@ const offerSchema = new schema({
     type: Boolean,
     default: false,
   },
+  company: String,
 });
 
 const Offer = mongoose.model("offer", offerSchema);
