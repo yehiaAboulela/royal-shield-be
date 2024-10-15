@@ -1,14 +1,14 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const jwt = require("jsonwebtoken");
+const fs = require("fs");
 const bodyParser = require("body-parser");
+const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 require("dotenv").config();
 const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
+
 const path = require("path");
-const fs = require("fs");
 
 const app = express();
 
@@ -16,13 +16,14 @@ app.use(express.json());
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const Warranty = require("./models/warranty");
 const Serial = require("./models/serial");
 const Offer = require("./models/offer");
 const Admin = require("./models/admin");
 const Appointment = require("./models/appointment");
-
+const Application = require("./models/application");
 mongoose
   .connect(`${process.env.MONGO_URI}`)
   .then(() => {
@@ -140,10 +141,10 @@ app.post("/checkSerial", async (req, res) => {
   }
 });
 
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+const uploadWarranty = multer({ dest: "uploads/" });
 
 /* activate serial */
-app.post("/activation", upload.single("image"), async (req, res) => {
+app.post("/activation", uploadWarranty.single("image"), async (req, res) => {
   const {
     name,
     phoneNumber,
@@ -207,7 +208,6 @@ app.get("/activatedWarrantys", async (req, res) => {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).send("No token provided or invalid format");
   }
-
   const token = authHeader.split(" ")[1];
 
   try {
@@ -527,6 +527,69 @@ app.delete("/bookForm/:id", async (req, res) => {
   }
 });
 
+const uploadApplication = multer({ dest: "applicants/" });
+
+app.post(
+  "/application",
+  uploadApplication.single("application"),
+  async (req, res) => {
+    const { name, birthdate, email, phone, address, position, coverLetter } =
+      req.body;
+
+    try {
+      const newApplication = new Application({
+        name,
+        birthdate,
+        email,
+        phone,
+        address,
+        position,
+        coverLetter,
+        cvPath: req.file.path,
+      });
+      await newApplication.save();
+      res.json({ statue: "success" });
+    } catch (error) {
+      res.status(500).send(`Error: ${error.message}`);
+    }
+  }
+);
+
+app.get("/applicants", async (req, res) => {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).send("No token provided or invalid format");
+  }
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const applications = await Application.find();
+    if (applications.length > 0) {
+      res.json({
+        statue: "success",
+        data: {
+          applications,
+        },
+      });
+    } else {
+      res.json({ statue: "empty" });
+    }
+  } catch (error) {
+    res.send(error);
+  }
+});
+app.get("/download/:id", async (req, res) => {
+  try {
+    const application = await Application.findById(req.params.id);
+    if (!application) {
+      return res.status(404).send("Application not found");
+    }
+    const filePath = path.join(__dirname, application.cvPath);
+    res.download(filePath);
+  } catch (error) {
+    res.status(500).send(`Error: ${error.message}`);
+  }
+});
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log("port is 3000");
