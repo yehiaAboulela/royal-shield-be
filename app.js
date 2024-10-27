@@ -24,6 +24,8 @@ const Offer = require("./models/offer");
 const Admin = require("./models/admin");
 const Appointment = require("./models/appointment");
 const Application = require("./models/application");
+const Blog = require("./models/blog");
+
 mongoose
   .connect(`${process.env.MONGO_URI}`)
   .then(() => {
@@ -578,6 +580,7 @@ app.get("/applicants", async (req, res) => {
     res.send(error);
   }
 });
+
 app.get("/download/:id", async (req, res) => {
   try {
     const application = await Application.findById(req.params.id);
@@ -590,6 +593,74 @@ app.get("/download/:id", async (req, res) => {
     res.status(500).send(`Error: ${error.message}`);
   }
 });
+
+app.post("/blog", async (req, res) => {
+  const {
+    label_en,
+    label_ar,
+    heading_en,
+    heading_ar,
+    subHeading_en,
+    subHeading_ar,
+    date,
+    img,
+    points,
+  } = req.body;
+
+  try {
+    const newBlog = new Blog({
+      label_en,
+      label_ar,
+      heading_en,
+      heading_ar,
+      subHeading_en,
+      subHeading_ar,
+      date,
+      img,
+      points,
+    });
+
+    await newBlog.save();
+    res.json({ status: "success", msg: "Blog added successfully" });
+  } catch (error) {
+    res.status(500).send(`Error: ${error.message}`);
+  }
+});
+
+app.get("/blog", async (req, res) => {
+  try {
+    const blogs = await Blog.find({});
+    res.status(200).json({
+      status: "success",
+      data: {
+        blogs,
+      },
+    });
+  } catch (error) {
+    res.status(500).send(`Error: ${error.message}`);
+  }
+});
+// Endpoint to get a blog by ID
+app.get("/blog/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const blog = await Blog.findById(id);
+
+    if (!blog) {
+      return res.status(404).json({ status: "error", msg: "Blog not found" });
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        blog,
+      },
+    });
+  } catch (error) {
+    res.status(500).send(`Error: ${error.message}`);
+  }
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log("port is 3000");
