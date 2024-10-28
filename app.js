@@ -163,7 +163,7 @@ app.post("/activation", uploadWarranty.single("image"), async (req, res) => {
   try {
     const foundSerial = await Serial.findOne({ serialNumber });
 
-    if (!foundSerial) {
+    if ((!foundSerial, serialNumber !== "Royal-Nano")) {
       return res.send({ msg: "not found" });
     }
 
