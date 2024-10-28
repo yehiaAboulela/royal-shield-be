@@ -161,25 +161,26 @@ app.post("/activation", uploadWarranty.single("image"), async (req, res) => {
   } = req.body;
 
   try {
-    const foundSerial = await Serial.findOne({ serialNumber });
+    if (serialNumber !== "Royal-Nano") {
+      const foundSerial = await Serial.findOne({ serialNumber });
+      if (!foundSerial) {
+        return res.send({ msg: "not found" });
+      }
 
-    if ((!foundSerial, serialNumber !== "Royal-Nano")) {
-      return res.send({ msg: "not found" });
+      if (foundSerial.activated) {
+        const activatedWarranty = await Warranty.findOne({ serialNumber });
+        return res.send({
+          msg: "activated",
+          owner: {
+            name: activatedWarranty.name.slice(0, 2),
+            phoneNumber: String(activatedWarranty.phoneNumber).slice(-3),
+          },
+        });
+      }
+
+      foundSerial.activated = true;
+      await foundSerial.save();
     }
-
-    if (foundSerial.activated) {
-      const activatedWarranty = await Warranty.findOne({ serialNumber });
-      return res.send({
-        msg: "activated",
-        owner: {
-          name: activatedWarranty.name.slice(0, 2),
-          phoneNumber: String(activatedWarranty.phoneNumber).slice(-3),
-        },
-      });
-    }
-
-    foundSerial.activated = true;
-    await foundSerial.save();
 
     const newActivation = new Warranty({
       name,
