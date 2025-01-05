@@ -3,3 +3,4 @@ node_moduled/*
 .idea/*
 images/*
 !images/.gitkeep
+.env
