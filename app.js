@@ -344,6 +344,26 @@ app.post("/offerUnCheck", async (req, res) => {
     res.status(500).send({ message: "An error occurred", error });
   }
 });
+app.delete("/offer/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const deletedMessage = await Offer.findOneAndDelete({ _id: id });
+
+    if (!deletedMessage) {
+      return res.status(404).send({ msg: "Activation not found" });
+    }
+
+    const allMessages = await Offer.find();
+
+    res.status(200).send({
+      msg: "message deleted successfully",
+      remainingActivations: allMessages,
+    });
+  } catch (err) {
+    res.status(500).send(`Error: ${err.message}`);
+  }
+});
 
 app.get("/getOffers", async (req, res) => {
   const authHeader = req.headers["authorization"];
