@@ -76,6 +76,36 @@ app.post("/deleteSerial", async (req, res) => {
   }
 });
 
+app.post("/updateBranch", async (req, res) => {
+  const { serialNumber, branch } = req.body;
+
+  if (!serialNumber || !branch) {
+    return res
+      .status(400)
+      .send({ msg: "Serial number and branch are required" });
+  }
+
+  try {
+    const updatedSerial = await Serial.findOneAndUpdate(
+      { serialNumber },
+      { branch },
+      { new: true }
+    );
+
+    if (!updatedSerial) {
+      return res.status(404).send({ msg: "Serial not found" });
+    }
+
+    // Fetch all serials, maintaining the order
+    const serials = await Serial.find({}).sort({ _id: 1 });
+
+    res.status(200).send({ msg: "Branch updated successfully", serials });
+  } catch (error) {
+    res
+      .status(500)
+      .send({ msg: "Error updating branch", error: error.message });
+  }
+});
 // Protected Admin Route
 app.get("/viewSerials", async (req, res) => {
   const authHeader = req.headers["authorization"];
