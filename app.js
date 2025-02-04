@@ -38,15 +38,18 @@ mongoose
 /* admin add or delete serials */
 app.get("/", (req, res) => res.send("Hello World!"));
 app.post("/addSerial", async (req, res) => {
-  const { serialNumber } = req.body;
+  const { serialNumber, branch } = req.body;
 
   try {
     const existingSerial = await Serial.findOne({ serialNumber });
     if (existingSerial) {
       return res.status(400).send({ msg: "Serial already exists" });
+    } else if (!branch) {
+      return res.status(400).send({ msg: "No branch has been added" });
     } else {
       const newSerial = new Serial({
         serialNumber,
+        branch,
       });
       await newSerial.save();
       const serials = await Serial.find({});

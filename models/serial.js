@@ -3,6 +3,7 @@ const schema = mongoose.Schema;
 
 const serialSchema = new schema({
   serialNumber: String,
+  branch: String,
   activated: {
     type: Boolean,
     default: false,
