@@ -4,3 +4,4 @@ node_moduled/*
 images/*
 !images/.gitkeep
 .env
+.vercel
