@@ -35,7 +35,7 @@ mongoose
     console.log("err connecting DB");
   });
 
-/* admin add or delete serials */
+/* admin add or delete serialss */
 app.get("/", (req, res) => res.send("Hello World!"));
 app.post("/addSerial", async (req, res) => {
   const { serialNumber, branch } = req.body;
